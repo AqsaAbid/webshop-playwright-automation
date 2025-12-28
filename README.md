@@ -1,6 +1,6 @@
 # Demo Web Shop • Playwright JS
 
-Minimal Playwright test suite for https://demowebshop.tricentis.com with dotenv-based config and Allure reporting.
+Minimal Playwright test suite for https://demowebshop.tricentis.com with html reporting.
 
 ## Quick Start
 
