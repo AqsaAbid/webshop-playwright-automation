@@ -1,0 +1,17 @@
+{
+  "products": [
+    { "searchTerm": "14.1-inch Laptop", "quantity": 2 },
+    { "searchTerm": "Smartphone", "quantity": 1 }
+  ],
+  "billing": {
+    "firstName": "Aqsa",
+    "lastName": "Abid",
+    "country": "Pakistan",
+    "city": "Faisalabad",
+    "address1": "Street 1",
+    "zip": "38000",
+    "phone": "03001234567",
+    "email": "demo.test@gmail.com"
+  },
+  "payment": { "method": "CashOnDelivery" }
+}
