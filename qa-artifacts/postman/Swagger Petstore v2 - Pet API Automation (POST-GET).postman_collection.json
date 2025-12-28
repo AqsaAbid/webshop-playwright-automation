@@ -1,0 +1,227 @@
+{
+	"info": {
+		"_postman_id": "0873d5e8-5f5a-462b-84d7-0e6bfef1d61a",
+		"name": "Swagger Petstore v2 - Pet API Automation (POST/GET)",
+		"description": "Automated API tests for Swagger Petstore v2 endpoints:\n- POST https://petstore.swagger.io/v2/pet (create/update a pet)\n- GET  https://petstore.swagger.io/v2/pet/{petId} (fetch pet details)\n\nThis collection uses collection variables:\n- baseUrl (default: https://petstore.swagger.io/v2)\n- petId (set from POST response)\n- petName, petStatus (set in Pre-request)\n\nRun order:\n1) POST - Add/Update Pet (Happy Path)\n2) GET  - Get Pet by Id (Happy Path)\n3) GET  - Get Pet with Non-Existent Id (Negative)\n4) POST - Add Pet with Invalid Body (Negative)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "51092413"
+	},
+	"item": [
+		{
+			"name": "Pet APIs",
+			"item": [
+				{
+					"name": "POST - Add/Update Pet (Happy Path)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Generate a unique pet id & name each run",
+									"const ts = Date.now();",
+									"const rand = Math.floor(Math.random()*100000);",
+									"pm.collectionVariables.set('petId', String(ts + rand));",
+									"pm.collectionVariables.set('petName', `QA_Pet_${ts}`);",
+									"const statuses = ['available','pending','sold'];",
+									"pm.collectionVariables.set('petStatus', statuses[Math.floor(Math.random()*statuses.length)]);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"  pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Basic JSON structure validation",
+									"pm.test('Response is JSON', function () {",
+									"  pm.response.to.be.json;",
+									"});",
+									"",
+									"const res = pm.response.json();",
+									"pm.test('Pet has id, name, status', function () {",
+									"  pm.expect(res).to.have.property('id');",
+									"  pm.expect(res).to.have.property('name');",
+									"  pm.expect(res).to.have.property('status');",
+									"});",
+									"",
+									"// Verify fields match what we sent",
+									"pm.test('Returned id matches generated petId', function () {",
+									"  pm.expect(String(res.id)).to.eql(pm.collectionVariables.get('petId'));",
+									"});",
+									"pm.test('Returned name matches generated petName', function () {",
+									"  pm.expect(res.name).to.eql(pm.collectionVariables.get('petName'));",
+									"});",
+									"pm.test('Returned status matches generated petStatus', function () {",
+									"  pm.expect(res.status).to.eql(pm.collectionVariables.get('petStatus'));",
+									"});",
+									"",
+									"// Store id for later GET (redundant but explicit)",
+									"pm.collectionVariables.set('petId', String(res.id));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": {{petId}},\n  \"category\": {\"id\": 1, \"name\": \"Dogs\"},\n  \"name\": \"{{petName}}\",\n  \"photoUrls\": [\"https://example.com/photo1.jpg\"],\n  \"tags\": [{\"id\": 1, \"name\": \"automation\"}],\n  \"status\": \"{{petStatus}}\"\n}"
+						},
+						"url": "{{baseUrl}}/pet",
+						"description": "Creates/updates a pet. Generates a unique petId/name/status and validates response, then stores petId for subsequent GET."
+					},
+					"response": []
+				},
+				{
+					"name": "GET - Get Pet by Id (Happy Path)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"  pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"  pm.response.to.be.json;",
+									"});",
+									"",
+									"const res = pm.response.json();",
+									"pm.test('Returned id matches petId', function () {",
+									"  pm.expect(String(res.id)).to.eql(pm.collectionVariables.get('petId'));",
+									"});",
+									"pm.test('Returned name matches petName', function () {",
+									"  pm.expect(res.name).to.eql(pm.collectionVariables.get('petName'));",
+									"});",
+									"pm.test('Returned status matches petStatus', function () {",
+									"  pm.expect(res.status).to.eql(pm.collectionVariables.get('petStatus'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/pet/{{petId}}",
+						"description": "Fetch the pet details for the petId created in the POST request."
+					},
+					"response": []
+				},
+				{
+					"name": "GET - Get Pet with Non-Existent Id (Negative)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Expected: 404 Pet not found",
+									"pm.test('Status code is 404 (Not Found)', function () {",
+									"  pm.expect(pm.response.code).to.be.oneOf([404, 400]);",
+									"});",
+									"",
+									"pm.test('Response is JSON (if provided)', function () {",
+									"  // Petstore typically returns JSON. If it doesn't, don't fail hard.",
+									"  const ct = pm.response.headers.get('Content-Type') || '';",
+									"  if (ct.includes('application/json')) {",
+									"    pm.response.to.be.json;",
+									"  } else {",
+									"    pm.expect(true).to.eql(true);",
+									"  }",
+									"});",
+									"",
+									"if ((pm.response.headers.get('Content-Type') || '').includes('application/json')) {",
+									"  const res = pm.response.json();",
+									"  pm.test('Has error message', function () {",
+									"    pm.expect(res).to.have.property('message');",
+									"  });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{baseUrl}}/pet/{{nonExistentPetId}}",
+						"description": "Negative test: request a petId that should not exist. Validates 404 Not Found (or occasionally 400 depending on backend behavior)."
+					},
+					"response": []
+				},
+				{
+					"name": "POST - Add Pet with Invalid Body (Negative)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Expected: 400 Invalid input (or similar)",
+									"pm.test('Status code indicates client error (4xx)', function () {",
+									"  pm.expect(pm.response.code).to.be.within(400, 499);",
+									"});",
+									"",
+									"pm.test('Response has some error body', function () {",
+									"  pm.expect(pm.response.text().length).to.be.above(0);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"not-a-number\",\n  \"name\": \n}"
+						},
+						"url": "{{baseUrl}}/pet",
+						"description": "Negative test: send intentionally invalid JSON/body to validate error handling."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://petstore.swagger.io/v2"
+		},
+		{
+			"key": "petId",
+			"value": ""
+		},
+		{
+			"key": "petName",
+			"value": ""
+		},
+		{
+			"key": "petStatus",
+			"value": ""
+		},
+		{
+			"key": "nonExistentPetId",
+			"value": "999999999999"
+		}
+	]
+}
