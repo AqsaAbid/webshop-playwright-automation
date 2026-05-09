@@ -1,1 +1,1 @@
-Bonus Task of AI Usage is here
+AI Usage is explained here
